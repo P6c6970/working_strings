@@ -1,0 +1,128 @@
+My_proect.cpp
+
+#include <iostream>
+#include <string>
+#include <windows.h> //для SetConsole
+#include "Сipher.h"
+
+using namespace std;
+
+// - - - - -
+
+int main()
+{
+	setlocale(0, "");
+	SetConsoleCP(1251);
+	SetConsoleOutputCP(1251);
+	string text = "АБВГабвг";
+	Сipher var;
+	cout << "Оригинал\n";
+	cout << text << endl << endl;
+	cout << "Шифр Цезаря\n";
+	cout << var.Caesar(text, 1) << endl << endl;
+	cout << "Шифр Виженера\n";
+	cout << var.Vigenere(text, "ая") << endl << endl;
+	cout << "Статистика\n";
+	cout << var.Statistics(text) << endl << endl;
+	system("PAUSE");
+	return 0;
+}
+
+
+
+Сipher.h
+
+#pragma once
+class Сipher {
+private:
+	char rus[34] = "абвгдеёжзийклмнопрстуфхцчшщъыьэюя";
+	char Rus[34] = "АБВГДЕЁЖЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯ";
+	int Find_sign(char* txt, char a);
+	char Shift_sign(char sign, int kod);
+public:
+	std::string Caesar(std::string txt, int kod);
+	std::string Vigenere(std::string txt, std::string kod);
+	// - - - - -
+	std::string Statistics(std::string txt);
+};
+
+
+
+Сipher.cpp
+
+#include <string>
+#include "Сipher.h"
+ 
+int Сipher::Find_sign(char* txt, char a) { //поиск символа в строке, возвращает индекс символа, если его нет то -1
+	for (int i = 0; i < 33; i++)
+	{
+		if (txt[i] == a) return i;
+	}
+	return -1;
+}
+
+char Сipher::Shift_sign(char sign, int kod) {
+	if (Find_sign(rus, sign) != -1) {
+		return rus[(Find_sign(rus, sign) + kod) % 33];
+	}
+	else if (Find_sign(Rus, sign) != -1) {
+		return Rus[(Find_sign(Rus, sign) + kod) % 33];
+	}
+	//else if (int(sign >= 65) && int(sign <= 90)) return char(65 + ((int(sign) + kod - 65) % 26));
+	//else if (int(sign >= 97) && int(sign <= 122)) return char(97 + ((int(sign) + kod - 97) % 26)); инглиш
+	else return sign;
+}
+
+std::string Сipher::Caesar(std::string txt, int kod) { //Шифр цезаря
+	while (kod < 0) kod += 33; //сделать сдвиг положительным
+	for (int i = 0; i < int(txt.size()); i++)
+	{
+		txt[i] = Shift_sign(txt[i], kod);
+	}
+	return txt;
+}
+
+std::string Сipher::Vigenere(std::string txt, std::string kod) { //Шифр виженера
+	int len = int(kod.size());
+	int *kodc = new int[len];
+	for (int i = 0; i < len; i++)
+	{
+		kodc[i] = Find_sign(rus, kod[i])+1;
+		if (kodc[i] == 0) kodc[i] = Find_sign(Rus, kod[i])+1;
+		if (kodc[i] == 0) return "Ошибка:Допустимы только русские буквы";
+	}
+	for (int i = 0; i < int(txt.size()); i++)
+	{
+		txt[i] = Shift_sign(txt[i], kodc[i%len]);
+	}
+	return txt;
+}
+
+std::string Сipher::Statistics(std::string txt) { //Статистика по символам
+	int sign[33] = { 0 };
+	int count = 0;
+	for (int i = 0; i < int(txt.size()); i++)
+	{
+		if (Find_sign(rus, txt[i]) != -1) {
+			sign[Find_sign(rus, txt[i])]++;
+			count++;
+		}
+		else if (Find_sign(Rus, txt[i]) != -1) {
+			sign[Find_sign(Rus, txt[i])]++;
+			count++;
+		}
+	}
+	txt = "Всего букв: " + std::to_string(count) + "\n";
+	for (int i = 0; i < 32; i += 4)
+	{
+		for (int j = 0; j < 4; j++)
+		{
+			txt += rus[i + j];
+			txt += "-" + std::to_string(sign[i + j]) + "\t";
+		}
+		txt += "\n";
+	}
+	txt += rus[32];
+	txt += "-" + std::to_string(sign[32]) + "\n";
+	return txt;
+}
