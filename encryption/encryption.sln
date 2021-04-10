@@ -31,25 +31,68 @@ int main()
 
 
 Сipher.h
-
 #pragma once
 #include <string>
-
 class Сipher {
 private:
 	char rus[34] = "абвгдеёжзийклмнопрстуфхцчшщъыьэюя";
 	char Rus[34] = "АБВГДЕЁЖЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯ";
+	int rus_utf_8[33][2] = { {208,176},{208,177},{208,178},{208,179},{208,180},{208,181},{209,144},{208,182},{208,183},{208,184},{208,185},{208,186},{208,187},{208,188},{208,189},{208,190},{208,191},{209,128},{209,129},{209,130},{209,131},{209,132},{209,133},{209,134},{209,135},{209,136},{209,137},{209,138},{209,139},{209,140},{209,141},{209,142},{209,143} };
+	int Rus_utf_8[33][2] = { {208,144},{208,145},{208,146},{208,147},{208,148},{208,149},{208,129},{208,150},{208,151},{208,152},{208,153},{208,154},{208,155},{208,156},{208,157},{208,158},{208,159},{208,160},{208,161},{208,162},{208,163},{208,164},{208,165},{208,166},{208,167},{208,168},{208,169},{208,170},{208,171},{208,172},{208,173},{208,174},{208,175} };
+	char marks[28] = " !\"#$%&'()*+,-./:;<=>?@[\]^_";
+	int marks_utf_8[28] = { 32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,58,59,60,61,62,63,64,91,92,93,94,95 };
+	std::string rus_morse[33] = { "*-","-***","*--","--*","-**","*","*","***-","--**","**","*---","-*-","*-**","--","-*","---","*--*","*-*","***","-","**-","**-*","****","-*-*","---*","----","--*-","--*--","-*--","-**-","**-**","**--","*-*-" };
+	std::string marks_morse[28] = { " ","--**--","*−**−*","","***-**-","","*-***","*----*","-*--*","-*--*-","","*-*-*","*-*-*-","-****-","******","-**-*","---***","-*-*-*","","-***-","","**--**","*--*-*","","","","","**--*-"};
+	// - - - - -
+	std::string Convert_to_binary(int a);
+	int Convert_to_decimal(std::string a);
 	int Find_sign(char* txt, char a);
+	int Count_sign(std::string txt, char a = ' ');
 	char Shift_sign(char sign, int kod);
-
+	std::string *Split(std::string txt, int len, char a = ' ');
+	int Find_int(int a, bool b);
 public:
 	enum languages { RU, EN };
 	short language = RU;
-	std::string Caesar(std::string txt, int kod);
-	std::string Vigenere(std::string txt, std::string kod);
+	std::string Caesar(std::string txt, int kod, bool status = 0);
+	std::string Vigenere(std::string txt, std::string kod, bool status = 0);
+	std::string Atbash(std::string txt);
+	std::string Morse(std::string txt, bool status = 0);
+	std::string Binary(std::string txt, bool status = 0);
 	// - - - - -
 	std::string Statistics(std::string txt);
 };
+
+
+Сipher.cpp
+#include "Сipher.h"
+std::string Сipher::Convert_to_binary(int a) { //преобразовать десятичное число в двоичную строку
+	int b=0;
+	for (int i = 0; a > 0; i++)
+	{
+		b += (a % 2)*pow(10.0, i);
+		a /= 2;
+	}
+	std::string c = std::to_string(b);
+	std::string d = "";
+	for (int i = 0; 8 > int(c.size())+i; i++)
+	{
+		d += "0";
+	}
+	d += c;
+	return d;
+}
+
+int Сipher::Convert_to_decimal(std::string a) { //преобразовать двоичную строку в десятичное число
+	int c = std::stoi(a);
+	int b = 0;
+	for (int i = 0; c > 0; i++)
+	{
+		b += (c % 2)*pow(2, i);
+		c /= 10;
+	}
+	return b;
+}
 
 int Сipher::Find_sign(char* txt, char a) { //поиск символа в строке, возвращает индекс символа, если его нет то -1
 	for (int i = 0; i < 33; i++)
@@ -59,7 +102,18 @@ int Сipher::Find_sign(char* txt, char a) { //поиск символа в ст�
 	return -1;
 }
 
+int Сipher::Count_sign(std::string txt, char a) { //поиск колличества символа в строке, возвращает колличество, если его нет то -1
+	int count = 0;
+	for (int i = 0; i < int(txt.size()); i++)
+	{
+		if (txt[i] == a) count++;
+	}
+	if (count==0) return -1;
+	return count;
+}
+
 char Сipher::Shift_sign(char sign, int kod) {
+	while (kod < 0) kod += 33; //сделать сдвиг положительным
 	if (Find_sign(rus, sign) != -1) {
 		return rus[(Find_sign(rus, sign) + kod) % 33];
 	}
@@ -71,29 +125,146 @@ char Сipher::Shift_sign(char sign, int kod) {
 	else return sign;
 }
 
-std::string Сipher::Caesar(std::string txt, int kod) { //Шифр цезаря
-	while (kod < 0) kod += 33; //сделать сдвиг положительным
+std::string *Сipher::Split(std::string txt, int len, char a) {
+	std::string *kod = new std::string[len];
+	for (int i = 0; i < len; i++)
+	{
+		kod[i] = "";
+	}
+	int count = 0;
 	for (int i = 0; i < int(txt.size()); i++)
 	{
-		txt[i] = Shift_sign(txt[i], kod);
+		if (txt[i] != ' ') kod[count] += txt[i];
+		else count++;
+	}
+	return kod;
+}
+
+int Сipher::Find_int(int a, bool b) { //поиск числа в масиве, если его нет то -1
+	if (b == 0) {
+		for  (int i = 0; i < 28; i++)
+		{
+			if (marks_utf_8[i] == a) return i;
+		}
+	}
+	else {
+		for (int i = 0; i < 33; i++)
+		{
+			if (Rus_utf_8[i][1] == a) return i + 33;
+			else if (rus_utf_8[i][1] == a) return i;
+		}
+	}
+	return -1;
+}
+
+std::string Сipher::Caesar(std::string txt, int kod, bool status) { //Шифр Цезаря
+	for (int i = 0; i < int(txt.size()); i++)
+	{
+		txt[i] = Shift_sign(txt[i], kod*(1 - 2 * status));
 	}
 	return txt;
 }
 
-std::string Сipher::Vigenere(std::string txt, std::string kod) { //Шифр виженера
+std::string Сipher::Vigenere(std::string txt, std::string kod, bool status) { //Шифр виженера
 	int len = int(kod.size());
 	int *kodc = new int[len];
 	for (int i = 0; i < len; i++)
 	{
-		kodc[i] = Find_sign(rus, kod[i]) + 1;
-		if (kodc[i] == 0) kodc[i] = Find_sign(Rus, kod[i]) + 1;
+		kodc[i] = Find_sign(rus, kod[i])+1;
+		if (kodc[i] == 0) kodc[i] = Find_sign(Rus, kod[i])+1;
 		if (kodc[i] == 0) return "Ошибка:Допустимы только русские буквы";
-	}
+	}//получение ключя в виде чисел
+	int j=0;
 	for (int i = 0; i < int(txt.size()); i++)
 	{
-		txt[i] = Shift_sign(txt[i], kodc[i%len]);
+		if (txt[i] != ' ') {
+			txt[i] = Shift_sign(txt[i], kodc[j%len] * (1 - 2 * status));
+			j++;
+		}
 	}
 	return txt;
+}
+
+std::string Сipher::Binary(std::string txt, bool status) { //Двоичный код
+	int len = int(txt.size());
+	std::string a = "";
+	if (status == 0) {//закодировать
+		int *kod = new int[len];
+		int index;
+		for (int i = 0; i < len; i++)
+		{
+			if (Find_sign(rus, txt[i]) != -1) {
+				index = Find_sign(rus, txt[i]);
+				a += Convert_to_binary(rus_utf_8[index][0]) + " " + Convert_to_binary(rus_utf_8[index][1]) + " ";
+			}
+			else if (Find_sign(Rus, txt[i]) != -1) {
+				index = Find_sign(Rus, txt[i]);
+				a += Convert_to_binary(Rus_utf_8[index][0]) + " " + Convert_to_binary(Rus_utf_8[index][1]) + " ";
+			}
+			else if (Find_sign(marks, txt[i]) != -1) {
+				a += Convert_to_binary(marks_utf_8[Find_sign(marks, txt[i])]) + " ";
+			}
+			else return "Ошибка:Допустимы только русские буквы и различные знаки";
+		}
+	}
+	else {//раскодировать
+		int len = Count_sign(txt) + 1;
+		std::string *kod = Split(txt, len);
+		int *kodc = new int[len];
+		int temp;
+		for (int i = 0; i < len; i++)
+		{
+			kodc[i] = Convert_to_decimal(kod[i]);
+		}
+		for (int i = 0; i < len; i++)
+		{
+			if (kodc[i] == 208 || kodc[i] == 209) {
+				i++;
+				temp = Find_int(kodc[i], 1);
+				if (temp < 33) a += rus[temp];
+				else a += Rus[temp - 33];
+			}
+			else a += marks[Find_int(kodc[i], 0)];
+		}
+	}
+	return a;
+}
+
+std::string Сipher::Atbash(std::string txt) {
+	int a;
+	for (int i = 0; i < int(txt.size()); i++)
+	{
+		a = Find_sign(rus, txt[i]);
+		if (a != -1) {
+			txt[i] = rus[33-a-1];
+		}
+		a = Find_sign(Rus, txt[i]);
+		if (a != -1) {
+			txt[i] = Rus[33-a-1];
+		}
+	}
+	return txt;
+}
+
+std::string Сipher::Morse(std::string txt, bool status) {
+	std::string a = "";
+	for (int i = 0; i < int(txt.size()); i++)
+	{
+		if (Find_sign(rus, txt[i]) != -1) {
+			a += rus_morse[Find_sign(rus, txt[i])];
+		}
+		else if (Find_sign(Rus, txt[i]) != -1) {
+			a += rus_morse[Find_sign(Rus, txt[i])];
+		}
+		else if (Find_sign(marks, txt[i]) != -1 && (i!=3 && i!=5 && i!=10 && i!=18 && i!=20 && i!=23 && i!=24 && i!=25 && i!=26)) {
+			a += marks_morse[Find_sign(marks, txt[i])];
+		}
+		else {
+			a += txt[i];
+		}
+		a += " ";
+	}
+	return a;
 }
 
 std::string Сipher::Statistics(std::string txt) { //Статистика по символам
