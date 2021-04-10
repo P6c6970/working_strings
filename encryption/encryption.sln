@@ -14,14 +14,20 @@ int main()
 	setlocale(0, "");
 	SetConsoleCP(1251);
 	SetConsoleOutputCP(1251);
-	string text = "АБВГабвг";
+	string text = "Ключом ко всякой науке является вопросительный знак.";
 	Сipher var;
 	cout << "Оригинал\n";
 	cout << text << endl << endl;
 	cout << "Шифр Цезаря\n";
-	cout << var.Caesar(text, 1) << endl << endl;
-	cout << "Шифр Виженера\n";
-	cout << var.Vigenere(text, "ая") << endl << endl;
+	cout << var.Caesar(text, 34) << endl << endl;
+	cout << "Шифр Виженера (ключ: кларнет)\n";
+	cout << var.Vigenere(text, "шифр") << endl << endl;
+	cout << "Шифр Атбаш\n";
+	cout << var.Atbash(text) << endl << endl;
+	cout << "Код Морзе\n";
+	cout << var.Morse(text) << endl << endl;
+	cout << "Двоичный код\n";
+	cout << var.Binary(text) << endl << endl;
 	cout << "Статистика\n";
 	cout << var.Statistics(text) << endl << endl;
 	system("PAUSE");
@@ -29,10 +35,10 @@ int main()
 }
 
 
-
 Сipher.h
 #pragma once
 #include <string>
+
 class Сipher {
 private:
 	char rus[34] = "абвгдеёжзийклмнопрстуфхцчшщъыьэюя";
@@ -66,6 +72,7 @@ public:
 
 Сipher.cpp
 #include "Сipher.h"
+
 std::string Сipher::Convert_to_binary(int a) { //преобразовать десятичное число в двоичную строку
 	int b=0;
 	for (int i = 0; a > 0; i++)
@@ -113,15 +120,20 @@ int Сipher::Count_sign(std::string txt, char a) { //поиск колличес
 }
 
 char Сipher::Shift_sign(char sign, int kod) {
-	while (kod < 0) kod += 33; //сделать сдвиг положительным
-	if (Find_sign(rus, sign) != -1) {
-		return rus[(Find_sign(rus, sign) + kod) % 33];
+	if (language == RU) {
+		while (kod < 0) kod += 33; //сделать сдвиг положительным
+		if (Find_sign(rus, sign) != -1) {
+			return rus[(Find_sign(rus, sign) + kod) % 33];
+		}
+		else if (Find_sign(Rus, sign) != -1) {
+			return Rus[(Find_sign(Rus, sign) + kod) % 33];
+		}
 	}
-	else if (Find_sign(Rus, sign) != -1) {
-		return Rus[(Find_sign(Rus, sign) + kod) % 33];
+	else if (language == EN) {
+		while (kod < 0) kod += 26; //сделать сдвиг положительным
+		if ((sign >= 65) && (sign <= 90)) return char(65 + (kod + sign - 65) % 26);
+		else if ((sign >= 97) && (sign <= 122)) return char(97 + (kod + sign - 97) % 26);
 	}
-	//else if (int(sign >= 65) && int(sign <= 90)) return char(65 + ((int(sign) + kod - 65) % 26));
-	//else if (int(sign >= 97) && int(sign <= 122)) return char(97 + ((int(sign) + kod - 97) % 26)); инглиш
 	else return sign;
 }
 
@@ -165,14 +177,22 @@ std::string Сipher::Caesar(std::string txt, int kod, bool status) { //Шифр 
 	return txt;
 }
 
-std::string Сipher::Vigenere(std::string txt, std::string kod, bool status) { //Шифр виженера
+std::string Сipher::Vigenere(std::string txt, std::string kod, bool status) { //Шифр Виженера
 	int len = int(kod.size());
 	int *kodc = new int[len];
 	for (int i = 0; i < len; i++)
 	{
-		kodc[i] = Find_sign(rus, kod[i])+1;
-		if (kodc[i] == 0) kodc[i] = Find_sign(Rus, kod[i])+1;
-		if (kodc[i] == 0) return "Ошибка:Допустимы только русские буквы";
+		if (language = RU) {
+			kodc[i] = Find_sign(rus, kod[i]) + 1;
+			if (kodc[i] == 0) kodc[i] = Find_sign(Rus, kod[i]) + 1;
+			if (kodc[i] == 0) return "Ошибка:Допустимы только русские буквы";
+		}
+		else if (language = EN) {
+
+			if ((kod[i] >= 65) && (kod[i] <= 90)) kodc[i] = kod[i] - 64;
+			else if ((kod[i] >= 97) && (kod[i] <= 122)) kodc[i] = kod[i] - 96;
+			else return "Ошибка:Допустимы только английские буквы";
+		}
 	}//получение ключя в виде чисел
 	int j=0;
 	for (int i = 0; i < int(txt.size()); i++)
