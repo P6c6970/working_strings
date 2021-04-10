@@ -33,26 +33,24 @@ int main()
 Сipher.h
 
 #pragma once
+#include <string>
+
 class Сipher {
 private:
 	char rus[34] = "абвгдеёжзийклмнопрстуфхцчшщъыьэюя";
 	char Rus[34] = "АБВГДЕЁЖЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯ";
 	int Find_sign(char* txt, char a);
 	char Shift_sign(char sign, int kod);
+
 public:
+	enum languages { RU, EN };
+	short language = RU;
 	std::string Caesar(std::string txt, int kod);
 	std::string Vigenere(std::string txt, std::string kod);
 	// - - - - -
 	std::string Statistics(std::string txt);
 };
 
-
-
-Сipher.cpp
-
-#include <string>
-#include "Сipher.h"
- 
 int Сipher::Find_sign(char* txt, char a) { //поиск символа в строке, возвращает индекс символа, если его нет то -1
 	for (int i = 0; i < 33; i++)
 	{
@@ -87,8 +85,8 @@ std::string Сipher::Vigenere(std::string txt, std::string kod) { //Шифр в�
 	int *kodc = new int[len];
 	for (int i = 0; i < len; i++)
 	{
-		kodc[i] = Find_sign(rus, kod[i])+1;
-		if (kodc[i] == 0) kodc[i] = Find_sign(Rus, kod[i])+1;
+		kodc[i] = Find_sign(rus, kod[i]) + 1;
+		if (kodc[i] == 0) kodc[i] = Find_sign(Rus, kod[i]) + 1;
 		if (kodc[i] == 0) return "Ошибка:Допустимы только русские буквы";
 	}
 	for (int i = 0; i < int(txt.size()); i++)
